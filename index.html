@@ -8,14 +8,16 @@
   <style>
       body {
       font-family: Arial, sans-serif;
-      padding: 20px;
+      padding: 0px;
     }
 
     .table-container {
       /* max-height: 15000px; */
-      height: calc(100vh - 120px); /* Adjust 150px based on your page header, padding, etc */
+      height: calc(100vh - 80px); /* Adjust 150px based on your page header, padding, etc */
       overflow-x: auto;
       overflow-y: auto;
+      width: 98vw;
+      /*box-sizing: border-box; */
       /* border: 1px solid #ccc; */
     }
 
@@ -23,7 +25,7 @@
       border-collapse: collapse;
       min-width: 1000px;
       width: 100%;
-      margin-top: 20px;
+      margin-top: 0px;
     }
 
     th,
@@ -147,10 +149,7 @@
       /* opacity: 0.7; */ /* Makes it slightly transparent for an even more 'disabled' look */
     }
 
-    .summary-intro {
-      margin-bottom: 15px; /* Adjust this value as needed for more or less space */
-      text-align: center;
-      }
+
 
     .form-buttons {
       text-align: center;
@@ -218,6 +217,13 @@
       font-weight: bold; /* Optional: Make it bold for emphasis */
     }
 
+     .confirm-summary-intro {
+      margin-bottom: 15px; /* Keep existing margin for default view */
+      text-align: center; /* Keep existing center align for default view */
+      font-size: 1.1em; /* NEW: Make the intro text slightly larger */
+      font-weight: bold; /* Optional: Make it bold for emphasis */
+    }
+
     /* New styles for greyed out cells and cannot-click icon */
     .greyed-out {
       background-color: #ddd !important;
@@ -228,8 +234,8 @@
 
     @media (max-width: 768px) {
       body {
-        padding: 10px;
-        font-size: 14px;
+        padding: 0px;
+        font-size: 16px;
       }
 
       table {
@@ -358,6 +364,12 @@ body.loading #signupButton {
     font-size: 1em; /* Make it 1em here to fit, but still bigger than the selection items */
   }
 
+  .confirm-summary-intro {
+    text-align: center; /* Left align the intro text */
+    margin-bottom: 8px; /* Adjust margin to be more compact in landscape */
+    font-size: 1em; /* Make it 1em here to fit, but still bigger than the selection items */
+  }
+
   #slotSummary div {
     margin-bottom: 3px; /* Small gap between each selected slot item */
     line-height: 1.2; /* Adjust line height for compactness */
@@ -431,10 +443,10 @@ body.loading #signupButton {
     <img src="tick.gif" alt="Animated Green Tick" class="checkmark-gif">
     </div>
     <h2>Thank You!</h2>
-    <p class="summary-intro">Your signup has been recorded.</p>
+    <p class="confirm-summary-intro">Your signup has been recorded.</p>
   </div>
   <script>
-    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwk7PR06xDvM9lKh-iUSW6ANt-iUgO75kdCILpl3dmbnsboNQomplswGwqBWXWV0XdGmg/exec'; 
+    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxJsI-oJ6xE_EOOg2DauFt-aAfG5jFxxb0Vo9KriZ9lxgdj6zz8GEe-mvr5He_rrmgYFg/exec'; 
         
     async function fetchData(action, data = {}) {
       if (action == 'getData') {
@@ -491,11 +503,13 @@ function hideSpinner() {
   }
 }
     async function loadVolunteerData() {
-        try {
+      resetInactivityTimer(); // Reset timer on data load start  
+      try {
             const data = await fetchData('getData');
             hideSpinner()
             currentVolunteerData = data;
             renderGrid(data.output);
+            resetInactivityTimer(); // Reset timer after grid is rendered
         } catch (error) {
             
             alert("Failed to load volunteering data: " + error.message);
@@ -570,9 +584,14 @@ function hideSpinner() {
       container.innerHTML = html;
 
       //Add event listeners for checkboxes
-      document.querySelectorAll(".slot-checkbox").forEach(cb => {
-        cb.addEventListener("change", handleCheckboxChange);
-      });
+     document.querySelectorAll(".slot-checkbox").forEach(cb => {
+            cb.addEventListener("change", (e) => {
+                handleCheckboxChange(e);
+                resetInactivityTimer(); // Reset timer on checkbox interaction
+            });
+        });
+
+
 
       // Add click listeners to slot cells (except direct clicks on checkboxes)
       document.querySelectorAll(".slot-cell").forEach(cell => {
@@ -590,11 +609,16 @@ function hideSpinner() {
         // Toggle checked state
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event('change'));
+         resetInactivityTimer(); // Reset timer on cell click
         });
         });
     
   updateSignupButtonState();
-    
+     //if (!hasScrolled) {
+     //       container.classList.remove('scroll-fades-hidden');
+     //       updateScrollIndicators();
+     //   }
+        resetInactivityTimer(); // Reset timer after grid render is complete
       }
 
     function handleCheckboxChange(event) {
@@ -655,6 +679,7 @@ function hideSpinner() {
         .join("");
       document.getElementById("signupForm").style.display = "block";
       document.getElementById("overlay").style.display = "block";
+            resetInactivityTimer(); // Reset timer when form is shown
     }
 
     function closeSignupForm() {
@@ -663,6 +688,7 @@ function hideSpinner() {
       document.getElementById("name").value = "";
       document.getElementById("phone").value = "";
       document.getElementById("email").value = "";
+            resetInactivityTimer(); // Reset timer when form is shown
     }
 
      function showSuccessMessage() {
@@ -685,7 +711,7 @@ function hideSpinner() {
             cell.classList.remove("greyed-out");
           });
           
-          
+            resetInactivityTimer(); // Reset timer when form is shown
           //loadVolunteerData(); // Refresh the grid
 
 
@@ -730,7 +756,10 @@ function hideSpinner() {
         }
       } catch (error) {
         alert("Failed to submit sign-up: " + error.message);
-      }
+        } finally {
+            submitButton.disabled = false; // Re-enable button regardless of success/failure
+            resetInactivityTimer(); // Reset timer after submission attempt
+        }
     }
 
     function updateSignupButtonState() {
@@ -742,7 +771,52 @@ function hideSpinner() {
 }
 
 
+    function resetInactivityTimer() {
+        if (isKioskMode) {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(refreshPage, INACTIVITY_TIMEOUT);
+            //console.log("Inactivity timer reset."); // For debugging
+        }
+    }
+
+    function refreshPage() {
+        //console.log("No activity for x minutes, refreshing page."); // For debugging
+        closeSignupForm()
+        loadVolunteerData()
+        
+    }
+
+
+        // Function to initialize kiosk mode behavior
+    function initializeKioskMode() {
+        // Check for '?kiosk' parameter
+        // Using URLSearchParams is more robust than just checking endsWith
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('kiosk')) {
+            isKioskMode = true;
+             console.log("Kiosk mode detected."); // For debugging
+
+            // Attach event listeners to reset the timer
+            document.addEventListener('click', resetInactivityTimer);
+            document.addEventListener('scroll', resetInactivityTimer);
+            document.addEventListener('keydown', resetInactivityTimer); // Good for keyboard interactions
+
+            // Initial start of the timer
+            resetInactivityTimer();
+        }
+    }
+
+     // Call initializeKioskMode when the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', initializeKioskMode);
+
     window.onload = loadVolunteerData;
+    
+     // --- Kiosk Mode Inactivity Refresh ---
+    let inactivityTimer;
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 5 minutes in milliseconds
+    let isKioskMode = false;
+
+
   </script>
 </body>
 </html>
