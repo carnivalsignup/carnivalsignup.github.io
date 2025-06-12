@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Volunteer Sign-Up</title>
+  <style>
+      body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .table-container {
+      /* max-height: 15000px; */
+      height: calc(100vh - 120px); /* Adjust 150px based on your page header, padding, etc */
+      overflow-x: auto;
+      overflow-y: auto;
+      /* border: 1px solid #ccc; */
+    }
+
+    table {
+      border-collapse: collapse;
+      min-width: 1000px;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 10px;
+      position: relative;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      left: 0;
+      background-color: #f4f4f4;
+      z-index: 9;
+      box-shadow: 0 2px 2px -1px rgba(0,0,0,0.4);
+    }
+
+    .activity-col {
+     min-width: 175px;
+     max-width: 175px;   /* your desired maximum width */
+    text-align: left;
+    padding-left: 7px;
+    }
+
+    th.activity-col {
+      left: 0; /* NEW: Stick to the left edge */
+      z-index: 10; /* Adjusted: Higher z-index to ensure it's on top of all other table cells (including other sticky headers when they intersect) */
+      /* background-color: #f4f4f4; inherited from 'th' */
+    }
+
+    td.activity-col {
+      position: sticky; /* NEW: Make it sticky */
+      left: 0; /* NEW: Stick to the left edge */
+      background-color: white; /* NEW: Essential to hide content that scrolls underneath */
+      z-index: 5; /* NEW: Ensures it's above regular table body cells, but below the main header and corner cell */
+      /* Keep existing styles for min-width, max-width, text-align, padding-left */
+    }
+
+    .slot-cell {
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .slot-label {
+      display: block;
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+
+    .slot-checkbox:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .checkmark-container {
+      text-align: center; /* Centers the image if it's an inline-block or block with auto margins */
+      margin-bottom: 15px; /* Adds space below the tick and above the 'Thank You!' header */
+    }
+
+    .checkmark-gif {
+      width: 80px; /* Adjust this value to make the GIF larger or smaller */
+      height: auto; /* Maintains aspect ratio */
+      display: block; /* Makes it a block element to use margin: auto for centering */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 12;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 30px;
+      max-width: 500px; /* Keep max-width for desktop */
+      width: 90%; /* Adjust this to give some breathing room, especially on mobile */
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      box-sizing: border-box; /* Add this to include padding in the width calculation */
+    }
+
+    .popup h2 {
+      margin-top: 10px;
+      font-size: 1.4em;
+      margin-bottom: 10px;
+      text-align: center; /* Center the heading as well */
+    }
+
+    .popup input {
+      margin: 10px auto; /* Use auto for left/right margins to center block elements */
+      padding: 10px;
+      font-size: 1em;
+      width: calc(100% - 20px); /* Adjust width to account for padding, or use max-width */
+      max-width: 400px; /* Limit input width to make them centrally align */
+      display: block; /* Important for margin: auto to work */
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    }
+
+    .popup button {
+      padding: 10px;
+      font-size: 1em;
+      /* Removed margin-top here, it will be handled by .form-buttons */
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Styling for the primary button when it is disabled */
+    .btn-primary:disabled {
+      background-color: #cccccc; /* A light grey color */
+      color: #666666; /* A darker grey for the text */
+      cursor: not-allowed; /* Changes the mouse cursor to a 'not-allowed' symbol */
+      /* You can optionally add: */
+      /* opacity: 0.7; */ /* Makes it slightly transparent for an even more 'disabled' look */
+    }
+
+    .summary-intro {
+      margin-bottom: 15px; /* Adjust this value as needed for more or less space */
+      text-align: center;
+      }
+
+    .form-buttons {
+      text-align: center;
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .btn-secondary {
+      background-color: #ccc;
+      color: black;
+      margin-left: 10px;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      z-index: 11;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Formatting of the 'loading' overlay' */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 18px;
+      z-index: 2000; /* Higher than other elements */
+      display: none; /* Hidden by default */
+}
+    #slotSummary {
+      margin-bottom: 10px;
+      font-size: 1em;
+      text-align: center; /* Center the slot summary */
+    }
+
+    .summary-intro {
+      margin-bottom: 15px; /* Keep existing margin for default view */
+      text-align: center; /* Keep existing center align for default view */
+      font-size: 1.1em; /* NEW: Make the intro text slightly larger */
+      font-weight: bold; /* Optional: Make it bold for emphasis */
+    }
+
+    /* New styles for greyed out cells and cannot-click icon */
+    .greyed-out {
+      background-color: #ddd !important;
+      color: #888 !important;
+      cursor: pointer;
+      position: relative;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      table {
+        min-width: unset;
+        width: max-content;
+        font-size: 13px;
+      }
+
+      .activity-col {
+        min-width: 120px;
+        max-width: 150px;
+        font-size: 13px;
+        padding-left: 4px;
+        word-break: break-word;
+      }
+
+      th, td {
+        padding: 6px;
+        font-size: 12px;
+      }
+
+      .popup {
+        max-width: 95vw; /* Keep this for mobile, ensuring it doesn't go too wide */
+        padding: 15px; /* Reduce padding slightly for mobile */
+      }
+
+      .popup input,
+      .popup button {
+        font-size: 16px;
+        padding: 8px;
+      }
+
+      .btn {
+        font-size: 14px;
+        padding: 8px 16px;
+      }
+    }
+
+    .loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Dark semi-transparent background */
+  display: none;
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: white;
+  font-size: 18px;
+}
+
+.loading-overlay .loading-content {
+  text-align: center;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3; /* Light grey */
+  border-top: 6px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Hide the sign-up button while loading */
+body.loading #signupButton {
+  display: none;
+}
+
+/* New CSS for mobile phones in landscape mode */
+@media (max-width: 768px) and (orientation: landscape) {
+  .popup {
+    /* Reduce overall padding for the popup to maximize content space */
+    padding: 10px;
+  }
+
+  .popup h2 {
+    /* Reduce top/bottom margin for the heading to save space */
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+
+  .form-content-wrapper {
+    display: flex; /* Use flexbox to arrange columns */
+    flex-direction: row; /* Arrange items in a row (side-by-side) */
+    gap: 15px; /* Space between the two columns */
+    align-items: flex-start; /* Align content at the top of each column */
+
+    /* Allow content within this wrapper to scroll if it exceeds screen height */
+    max-height: calc(100vh - 80px); /* Adjust this value if needed (100vh - header height - popup padding) */
+    overflow-y: auto; /* Enable vertical scrolling within the wrapper if content is too tall */
+    padding-right: 5px; /* Add some padding to the right for a potential scrollbar */
+  }
+
+  .summary-column {
+    flex: 1; /* Make this column take up available space */
+    min-width: 0; /* Allow column to shrink */
+    padding-right: 5px; /* Add a little internal padding to the right */
+    box-sizing: border-box; /* Include padding in the column's width */
+  }
+
+  .form-column {
+    flex: 1; /* Make this column take up available space */
+    min-width: 0; /* Allow column to shrink */
+    box-sizing: border-box; /* Include padding in the column's width */
+  }
+
+  #slotSummary {
+    text-align: left; /* Align text left in this column */
+    margin-bottom: 0; /* Remove default bottom margin */
+    font-size: 0.95em; /* Make summary text slightly smaller to fit better */
+  }
+
+  .summary-intro {
+    text-align: left; /* Left align the intro text */
+    margin-bottom: 8px; /* Adjust margin to be more compact in landscape */
+    font-size: 1em; /* Make it 1em here to fit, but still bigger than the selection items */
+  }
+
+  #slotSummary div {
+    margin-bottom: 3px; /* Small gap between each selected slot item */
+    line-height: 1.2; /* Adjust line height for compactness */
+  }
+ 
+
+  .popup input {
+    margin: 5px auto; /* Reduce top/bottom margins for inputs */
+    max-width: none; /* Remove max-width constraint for inputs in this context */
+    width: 100%; /* Make inputs take full width of their column */
+  }
+
+  .form-buttons {
+    margin-top: 10px; /* Reduce margin above buttons */
+    flex-direction: row; /* Ensure buttons remain in a row */
+    gap: 5px; /* Smaller gap between buttons */
+  }
+
+  /* Optional: Style for scrollbar if you want a custom look (for WebKit browsers like Chrome/Safari) */
+  .form-content-wrapper::-webkit-scrollbar {
+    width: 5px; /* Width of the vertical scrollbar */
+    height: 5px; /* Height of the horizontal scrollbar (not relevant here but good to include) */
+  }
+  .form-content-wrapper::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2); /* Color of the scrollbar thumb */
+    border-radius: 10px; /* Rounded corners for the thumb */
+  }
+  .form-content-wrapper::-webkit-scrollbar-track {
+    background: transparent; /* Transparent background for the scrollbar track */
+  }
+}
+
+  </style>
+</head>
+<body>
+  <!--<div class="loading-spinner" id="loadingSpinner"></div>-->
+<div id="loadingSpinner" class="loading-overlay">
+  <div class="loading-content">
+    <div class="spinner"></div>
+    <p>Loading, please wait...</p>  </div>
+</div>
+  <!--<h1>Volunteer Sign-Up</h1>-->
+  <div class="table-container">
+    <div id="gridContainer"></div>
+  </div>
+<button class="btn btn-primary" id="signupButton" onclick="showSignupForm()" disabled>
+  Sign up
+</button>
+
+  <div class="overlay" id="overlay"></div>
+  <div class="popup" id="signupForm">
+  <h2>Confirm Your Sign-Up</h2>
+  <div class="form-content-wrapper">
+    <div class="summary-column">
+      <div id="slotSummary"></div>
+    </div>
+    <div class="form-column">
+      <input type="text" id="name" placeholder="Your name" />
+      <input type="tel" id="phone" placeholder="Phone number" />
+      <input type="email" id="email" placeholder="Email address" />
+
+      <div class="form-buttons">
+        <button class="btn btn-primary" onclick="submitSignup()">Submit</button>
+        <button class="btn btn-secondary" onclick="closeSignupForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+  <div class="popup" id="successMessage">
+    <div class="checkmark-container">
+    <img src="tick.gif" alt="Animated Green Tick" class="checkmark-gif">
+    </div>
+    <h2>Thank You!</h2>
+    <p class="summary-intro">Your signup has been recorded.</p>
+  </div>
+  <script>
+    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwk7PR06xDvM9lKh-iUSW6ANt-iUgO75kdCILpl3dmbnsboNQomplswGwqBWXWV0XdGmg/exec'; 
+        
+    async function fetchData(action, data = {}) {
+      if (action == 'getData') {
+        showSpinner("Loading, please wait...");
+      } else {
+      showSpinner("Submitting, please wait...");
+      }
+        try {
+            const response = await fetch(BACKEND_URL, {
+      	    	redirect: "follow",
+		        method: "POST",
+		        mode: "cors",
+		        headers: { "Content-Type": "text/plain;charset=utf-8" },
+		        body: JSON.stringify({ action, data }),
+		        });
+            
+            //If response is not ok, throw an error:
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            }
+           
+            return await response.json()
+        
+        } catch (error) {
+            console.error("Fetch error:", error);
+            throw error; // Re-throw to be caught by calling function
+        }// finally {
+        //      hideSpinner();
+        //}
+    }
+  
+    let currentVolunteerData = null;
+
+function showSpinner(message) {
+  document.body.classList.add("loading");
+  const loadingTextElement = document.querySelector("#loadingSpinner .loading-content p");
+  if (loadingTextElement) {
+    loadingTextElement.textContent = message;
+  }
+  document.getElementById("loadingSpinner").style.display = "flex";
+  document.getElementById("overlay").style.display = "block";
+}
+
+// Function to hide the spinner
+function hideSpinner() {
+  document.body.classList.remove("loading");
+  document.getElementById("loadingSpinner").style.display = "none";
+  document.getElementById("overlay").style.display = "none";
+  // Optionally reset the text back to default after hiding
+  const loadingTextElement = document.querySelector("#loadingSpinner .loading-content p");
+  if (loadingTextElement) {
+    loadingTextElement.textContent = "Loading, please wait...";
+  }
+}
+    async function loadVolunteerData() {
+        try {
+            const data = await fetchData('getData');
+            hideSpinner()
+            currentVolunteerData = data;
+            renderGrid(data.output);
+        } catch (error) {
+            
+            alert("Failed to load volunteering data: " + error.message);
+            hideSpinner();
+        }
+    }
+
+    function renderGrid(data) {
+      const { timeSlots, activities } = data;
+      const container = document.getElementById("gridContainer");
+      let html = "<table><thead><tr><th class='activity-col'>Activity</th>";
+      timeSlots.forEach(slot => html += `<th>${slot}</th>`);
+      html += "</tr></thead><tbody>";
+
+      activities.forEach((activity, rowIndex) => {
+        html += `<tr><td class='activity-col'>${activity.name}</td>`;
+        activity.slots.forEach((slot, colIndex) => {
+          const filled = slot.filled;
+          const needed = slot.needed;          
+          
+          if (needed === 0) {
+            // Render grey blank box cell with no interaction or text
+            html += `<td class="slot-cell greyed-out" data-col="${colIndex}" style="background-color: #ddd; cursor: default;"></td>`;
+            return; // Skip further processing
+            }
+          
+          const percentFilled = Math.min(filled / needed, 1);
+
+          // Define RGB components
+          let r, g, b;
+          if (percentFilled <= 0.5) {
+            // Interpolate from Red (192, 0, 0) → Orange (255, 192, 0)
+            const t = percentFilled / 0.5;
+            r = Math.round(192 + (255 - 192) * t);
+            g = Math.round(0 + (192 - 0) * t);
+            b = 0;
+          } else {
+            // Interpolate from Orange (255, 192, 0) → Green (0, 176, 80)
+            const t = (percentFilled - 0.5) / 0.5;
+            r = Math.round(255 + (0 - 255) * t);
+            g = Math.round(192 + (176 - 192) * t);
+            b = Math.round(0 + (80 - 0) * t);
+          }
+
+          const bgColor = `rgb(${r}, ${g}, ${b})`;
+
+          // Adjust text color for contrast
+          const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+          const textColor = brightness < 128 ? "#fff" : "#000";
+          const checkboxId = `slot-${rowIndex}-${colIndex}`;
+
+          html += `
+            <td class="slot-cell" style="background-color: ${bgColor}; color: ${textColor}" data-col="${colIndex}">
+            <div class="slot-content" data-checkbox-id="${checkboxId}">
+                <div class="tooltip"></div>
+                ${filled}/${needed} places filled
+                <div class="slot-label">
+                <input type="checkbox" class="slot-checkbox"
+                    data-activity="${activity.name}"
+                    data-time="${timeSlots[colIndex]}"
+                    data-col="${colIndex}"
+                    id="${checkboxId}">
+                <label for="${checkboxId}"></label>
+                </div>
+            </div>
+            </td>`;
+        });
+        html += "</tr>";
+      });
+
+      html += "</tbody></table>";
+      container.innerHTML = html;
+
+      //Add event listeners for checkboxes
+      document.querySelectorAll(".slot-checkbox").forEach(cb => {
+        cb.addEventListener("change", handleCheckboxChange);
+      });
+
+      // Add click listeners to slot cells (except direct clicks on checkboxes)
+      document.querySelectorAll(".slot-cell").forEach(cell => {
+      cell.addEventListener("click", (e) => {
+        if (e.target.tagName.toLowerCase() === "input") return; // Ignore clicks directly on checkbox
+
+        // Ignore clicks on greyed-out cells to prevent toggling disabled checkboxes
+        if (cell.classList.contains("greyed-out")) return;
+
+        const checkbox = cell.querySelector("input.slot-checkbox");
+        if (!checkbox) return;
+
+        if (checkbox.disabled) return; // Just in case, do nothing if checkbox disabled
+
+        // Toggle checked state
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+        });
+        });
+    
+  updateSignupButtonState();
+    
+      }
+
+    function handleCheckboxChange(event) {
+      const clicked = event.target;
+      const colIndex = clicked.dataset.col;
+      const checkboxes = document.querySelectorAll(`.slot-checkbox[data-col="${colIndex}"]`);
+      const cells = [...document.querySelectorAll(`td.slot-cell[data-col="${colIndex}"]`)];
+
+      if (clicked.checked) {
+        // Disable other checkboxes in column, grey out other cells with icon
+        checkboxes.forEach(cb => {
+          if (cb !== clicked) {
+            cb.disabled = true;
+          }
+        });
+        cells.forEach(cell => {
+            const checkbox = cell.querySelector("input.slot-checkbox");
+            if (!checkbox) return; // Skip if no checkbox (i.e., needed === 0)
+            if (checkbox !== clicked) {
+                checkbox.disabled = true;
+                cell.classList.add("greyed-out");
+            } else {
+                checkbox.disabled = false;
+                cell.classList.remove("greyed-out");
+                const icon = cell.querySelector(".cannot-click-icon");
+                if (icon) icon.remove();
+            }
+        });
+      } else {
+        cells.forEach(cell => {
+        const checkbox = cell.querySelector("input.slot-checkbox");
+        if (!checkbox) return;
+        checkbox.disabled = false;
+        cell.classList.remove("greyed-out");
+        const icon = cell.querySelector(".cannot-click-icon");
+        if (icon) icon.remove();
+        });
+        }
+    updateSignupButtonState();
+      }
+
+    function showSignupForm() {
+      const selected = [...document.querySelectorAll(".slot-checkbox:checked")];
+      //if (selected.length === 0) {
+      //  alert("Please select at least one slot.");
+      //  return;
+      //}
+      const sorted = selected
+        .map(cb => ({ time: cb.dataset.time, activity: cb.dataset.activity }))
+        .sort((a, b) => a.time.localeCompare(b.time));     
+        document.getElementById("slotSummary").innerHTML =
+         `<div class="summary-intro">You are signing up for:</div>` + 
+        sorted
+        .map(s => {
+        const cleanActivity = s.activity.replace(/<br\s*\/?>/gi, ' ');
+        return `<div>${s.time} - ${cleanActivity}</div>`;
+        })
+        .join("");
+      document.getElementById("signupForm").style.display = "block";
+      document.getElementById("overlay").style.display = "block";
+    }
+
+    function closeSignupForm() {
+      document.getElementById("signupForm").style.display = "none";
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("name").value = "";
+      document.getElementById("phone").value = "";
+      document.getElementById("email").value = "";
+    }
+
+     function showSuccessMessage() {
+      document.getElementById("signupForm").style.display = "none"; // Hide the signup form
+      document.getElementById("successMessage").style.display = "block"; // Show the success message
+      document.getElementById("overlay").style.display = "block"; // Keep the overlay active
+
+      setTimeout(() => {
+        document.getElementById("successMessage").style.display = "none";
+        document.getElementById("overlay").style.display = "none";
+        
+        loadVolunteerData(); // Reload the grid to refresh state
+      }, 4000); // 4000 milliseconds = 4 seconds
+
+      document.querySelectorAll(".slot-checkbox").forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+          });
+          document.querySelectorAll("td.slot-cell.greyed-out").forEach(cell => {
+            cell.classList.remove("greyed-out");
+          });
+          
+          
+          //loadVolunteerData(); // Refresh the grid
+
+
+    }
+
+
+    async function submitSignup() {
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const email = document.getElementById("email").value.trim();
+
+      const selected = [...document.querySelectorAll(".slot-checkbox:checked")].map(cb => ({
+        activity: cb.dataset.activity,
+        time: cb.dataset.time,
+      }));
+
+      if (!name || !phone || !email) {
+        alert("Please complete all fields.");
+        return;
+      }
+      const signupData = {
+        name,
+        phone,
+        email,
+        selected
+        };
+    
+      try {
+        //showSpinner("Submitting, please wait...");
+        const response = await fetchData('recordSignup', signupData);
+        hideSpinner();
+        if (response.result && response.result.success) {
+          
+            // Clear form and selections
+          document.getElementById("name").value = "";
+          document.getElementById("phone").value = "";
+          document.getElementById("email").value = "";
+          showSuccessMessage(); 
+          
+        } else {
+            alert("Error: " + (response.result?.message || "Unknown error"));
+        }
+      } catch (error) {
+        alert("Failed to submit sign-up: " + error.message);
+      }
+    }
+
+    function updateSignupButtonState() {
+    const signupButton = document.getElementById("signupButton");
+    // Check if any checkbox is currently checked
+    const anyCheckboxChecked = document.querySelectorAll(".slot-checkbox:checked").length > 0;
+    // Set the button's disabled state based on whether any checkbox is checked
+    signupButton.disabled = !anyCheckboxChecked;
+}
+
+
+    window.onload = loadVolunteerData;
+  </script>
+</body>
+</html>
