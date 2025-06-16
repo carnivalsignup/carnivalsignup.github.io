@@ -19,6 +19,8 @@
       width: 98vw;
       /*box-sizing: border-box; */
       /* border: 1px solid #ccc; */
+      /*newline:*/
+      position: relative; /* Added for positioning scroll indicators */
     }
 
     table {
@@ -402,6 +404,71 @@ body.loading #signupButton {
   }
 }
 
+
+
+
+
+/* New CSS for scroll indicators */
+
+#scrollFadeBottom {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px; /* height of your fade */
+  pointer-events: none; /* so it doesn’t block mouse clicks */
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+  /* or your custom fade background */
+}
+
+
+.scroll-fade-bottom {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 60px; /* Height of the fade effect */
+        background: linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+        pointer-events: none; /* Allows clicks to pass through */
+        z-index: 8; /* Below sticky header, above table content */
+        opacity: 1;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .scroll-fade-bottom.hidden {
+        opacity: 0;
+    }
+
+.scroll-indicator-text {
+    position: sticky;      /* changed from absolute */
+    bottom: 10px;          /* position just above the fade */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.85em;
+    z-index: 5;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;
+
+        display: inline-block;          /* Shrinks to text width */
+    max-width: 90%;                 /* Optional: prevent from getting too wide */
+    text-align: center;             /* Center text inside the box */
+}
+
+/* Hide the scroll for more while loading */
+body.loading #scrollIndicatorText {
+  display: none;
+}
+
+    .scroll-indicator-text.hidden {
+        opacity: 0;
+    }
+
   </style>
 </head>
 <body>
@@ -412,9 +479,14 @@ body.loading #signupButton {
     <p>Loading, please wait...</p>  </div>
 </div>
   <!--<h1>Volunteer Sign-Up</h1>-->
-  <div class="table-container">
+  <div class="table-container" id="tableContainer">
     <div id="gridContainer"></div>
+    <!--Next two lines are new-->
+    <div class="scroll-fade-bottom" id="scrollFadeBottom"></div>
+    <div class="scroll-indicator-text" id="scrollIndicatorText">Scroll for more</div>
+    
   </div>
+  
 <button class="btn btn-primary" id="signupButton" onclick="showSignupForm()" disabled>
   Sign up
 </button>
@@ -427,9 +499,9 @@ body.loading #signupButton {
       <div id="slotSummary"></div>
     </div>
     <div class="form-column">
-      <input type="text" id="name" placeholder="Your name" />
-      <input type="tel" id="phone" placeholder="Phone number" />
-      <input type="email" id="email" placeholder="Email address" />
+      <input type="text" id="name" placeholder="Your name" autocomplete="off"/>
+      <input type="tel" id="phone" placeholder="Phone number" autocomplete="off"/>
+      <input type="email" id="email" placeholder="Email address" autocomplete="off"/>
 
       <div class="form-buttons">
         <button class="btn btn-primary" onclick="submitSignup()">Submit</button>
@@ -808,6 +880,62 @@ function hideSpinner() {
 
      // Call initializeKioskMode when the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', initializeKioskMode);
+
+
+
+
+
+    let tableContainer;
+    let scrollFadeBottom;
+    let scrollIndicatorText;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        tableContainer = document.getElementById('tableContainer');
+        scrollFadeBottom = document.getElementById('scrollFadeBottom');
+        scrollIndicatorText = document.getElementById('scrollIndicatorText');
+
+        if (tableContainer) {
+            tableContainer.addEventListener('scroll', updateScrollIndicators);
+            // Also call update when the window is resized, as scrollability might change
+            window.addEventListener('resize', updateScrollIndicators);
+        }
+    });
+
+    function updateScrollIndicators() {
+        if (!tableContainer || !scrollFadeBottom || !scrollIndicatorText) {
+            return;
+        }
+
+        const scrollHeight = tableContainer.scrollHeight;
+        const clientHeight = tableContainer.clientHeight;
+        const scrollTop = tableContainer.scrollTop;
+
+        // Check if content is actually scrollable vertically
+        const isScrollable = scrollHeight > clientHeight;
+
+        if (isScrollable) {
+            // How much user has scrolled from the top
+            const scrolledPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+            // If scrolled almost to the bottom, hide the indicators
+            // You can adjust the 0.95 threshold (95%)
+            if (scrolledPercentage >= 0.95) {
+                scrollFadeBottom.classList.add('hidden');
+                scrollIndicatorText.classList.add('hidden');
+            } else {
+                scrollFadeBottom.classList.remove('hidden');
+                scrollIndicatorText.classList.remove('hidden');
+            }
+        } else {
+            // If not scrollable, always hide the indicators
+            scrollFadeBottom.classList.add('hidden');
+            scrollIndicatorText.classList.add('hidden');
+        }
+    }
+
+
+
+
 
     window.onload = loadVolunteerData;
     
